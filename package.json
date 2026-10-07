@@ -1,22 +1,9 @@
 {
-  "name": "lumiere-jewellery",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "framer-motion": "^12.23.24",
-    "lucide-react": "^0.468.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-router-dom": "^7.9.4"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^5.0.4",
-    "vite": "^7.1.7"
-  }
+  "name":"lumiere-million-dollar-storefront",
+  "private":true,
+  "version":"3.0.0",
+  "type":"module",
+  "scripts":{"dev":"vite","build":"vite build","preview":"vite preview"},
+  "dependencies":{"@vitejs/plugin-react":"latest","framer-motion":"latest","lenis":"latest","lucide-react":"latest","react":"latest","react-dom":"latest","react-router-dom":"latest","vite":"latest"},
+  "devDependencies":{}
 }

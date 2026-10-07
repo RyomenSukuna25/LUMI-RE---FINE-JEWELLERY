@@ -1,295 +1,67 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { createRoot } from "react-dom/client";
-import {
-  ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Check, ChevronDown, ChevronLeft,
-  ChevronRight, Heart, Menu, Minus, Plus, Search, ShoppingBag, Sparkles, UserRound, X
-} from "lucide-react";
-import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
-import { BrowserRouter, Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import "./styles.css";
+import React,{createContext,useContext,useEffect,useMemo,useRef,useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import {BrowserRouter,useLocation,useNavigate,useParams,Link} from 'react-router-dom';
+import {AnimatePresence,motion,useScroll,useTransform} from 'framer-motion';
+import Lenis from 'lenis';
+import {ArrowRight,ArrowUpRight,ChevronDown,ChevronLeft,ChevronRight,Heart,Camera,LockKeyhole,Mail,MapPin,Menu,Minus,Plus,Search,ShoppingBag,Sparkles,UserRound,X,Check} from 'lucide-react';
+import {products,collections,journal,media,heroLocal} from './data';
+import './styles.css';
 
-const products = [
-  { id:"celeste", name:"Celeste Diamond Ring", category:"Rings", price:52999, oldPrice:64999, image:"/assets/product-ring.jpg", badge:"Bestseller", material:"Rose Gold", sizes:[6,7,8,9,10], desc:"A refined diamond ring crafted for timeless elegance. Brilliant-cut stones meet a delicate handcrafted band.", notes:"18K rose gold · Lab-grown diamond · Hand finished" },
-  { id:"pearl", name:"Pearl Drop Earrings", category:"Earrings", price:12499, image:"/assets/product-earrings.jpg", badge:"New", material:"Yellow Gold", sizes:[], desc:"A graceful pair designed around luminous pearl drops and a slender gold setting.", notes:"18K yellow gold · Freshwater pearl · Pair" },
-  { id:"emerald", name:"Emerald Pendant", category:"Pendants", price:32999, image:"/assets/product-necklace.jpg", badge:"Signature", material:"White Gold", sizes:[], desc:"A deep green centre stone framed by a precise white-gold setting.", notes:"18K white gold · Emerald · Adjustable chain" },
-  { id:"solitaire", name:"Solitaire Band", category:"Rings", price:28999, image:"/assets/ring.jpg", badge:"Icon", material:"Yellow Gold", sizes:[6,7,8,9,10], desc:"A quiet, sculptural band designed to sit beautifully alone or beside your favourite piece.", notes:"18K yellow gold · Hand polished" },
-  { id:"aurora", name:"Aurora Tennis Bracelet", category:"Bracelets", price:44999, image:"/assets/product-bracelet.jpg", badge:"Limited", material:"Rose Gold", sizes:[], desc:"A fluid line of brilliant stones with a balanced, contemporary silhouette.", notes:"18K rose gold · Lab-grown diamonds" },
-  { id:"nocturne", name:"Nocturne Chain", category:"Necklaces", price:21999, image:"/assets/product-necklace.jpg", badge:"New", material:"White Gold", sizes:[], desc:"A fine chain with a subtle architectural rhythm, made for layering.", notes:"18K white gold · Adjustable length" },
-  { id:"mangalsutra", name:"Lumière Mangalsutra", category:"Mangalsutra", price:39999, image:"/assets/collections.jpg", badge:"Heritage", material:"Yellow Gold", sizes:[], desc:"A contemporary interpretation of a deeply meaningful form.", notes:"18K yellow gold · Onyx · Hand finished" },
-  { id:"halo", name:"Halo Studs", category:"Earrings", price:16999, image:"/assets/product-earrings.jpg", badge:"Everyday", material:"White Gold", sizes:[], desc:"Compact halo studs designed to catch light without overpowering the wearer.", notes:"18K white gold · Lab-grown diamonds" }
-];
-
-const formatINR = n => `₹${n.toLocaleString("en-IN")}`;
-
-const StoreContext = createContext(null);
-function StoreProvider({ children }) {
-  const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem("lumiere-cart") || "[]"));
-  const [wishlist, setWishlist] = useState(() => JSON.parse(localStorage.getItem("lumiere-wishlist") || "[]"));
-  const [cartOpen, setCartOpen] = useState(false);
-
-  useEffect(() => localStorage.setItem("lumiere-cart", JSON.stringify(cart)), [cart]);
-  useEffect(() => localStorage.setItem("lumiere-wishlist", JSON.stringify(wishlist)), [wishlist]);
-
-  const addToCart = (product, size = product.sizes?.[0] || null) => {
-    setCart(prev => {
-      const key = `${product.id}-${size || "default"}`;
-      const found = prev.find(x => x.key === key);
-      if (found) return prev.map(x => x.key === key ? {...x, qty:x.qty+1} : x);
-      return [...prev, { key, id:product.id, size, qty:1 }];
-    });
-    setCartOpen(true);
-  };
-  const updateQty = (key, delta) => setCart(prev => prev.map(x => x.key === key ? {...x, qty:Math.max(1,x.qty+delta)} : x));
-  const removeItem = key => setCart(prev => prev.filter(x => x.key !== key));
-  const toggleWishlist = id => setWishlist(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev,id]);
-
-  const cartLines = cart.map(line => ({...line, product:products.find(p=>p.id===line.id)})).filter(x=>x.product);
-  const subtotal = cartLines.reduce((s,x)=>s+x.product.price*x.qty,0);
-  const count = cart.reduce((s,x)=>s+x.qty,0);
-
-  return <StoreContext.Provider value={{cart,cartLines,subtotal,count,wishlist,cartOpen,setCartOpen,addToCart,updateQty,removeItem,toggleWishlist}}>
-    {children}
-  </StoreContext.Provider>
-}
-const useStore = () => useContext(StoreContext);
-
-function Transition({ children }) {
-  return <AnimatePresence mode="wait"><motion.div key={useLocation().pathname} initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} transition={{duration:.35,ease:[.22,1,.36,1]}}>{children}</motion.div></AnimatePresence>
+const Store=createContext(null); const useStore=()=>useContext(Store);
+function StoreProvider({children}){
+ const [cart,setCart]=useState(()=>JSON.parse(localStorage.getItem('lumiere-cart-v3')||'[]'));
+ const [wish,setWish]=useState(()=>JSON.parse(localStorage.getItem('lumiere-wish-v3')||'[]'));
+ const [drawer,setDrawer]=useState(false),[search,setSearch]=useState(false);
+ useEffect(()=>localStorage.setItem('lumiere-cart-v3',JSON.stringify(cart)),[cart]);
+ useEffect(()=>localStorage.setItem('lumiere-wish-v3',JSON.stringify(wish)),[wish]);
+ const add=p=>{setCart(c=>{const x=c.find(i=>i.id===p.id);return x?c.map(i=>i.id===p.id?{...i,q:i.q+1}:i):[...c,{...p,q:1}]});setDrawer(true)};
+ const remove=id=>setCart(c=>c.filter(i=>i.id!==id)); const qty=(id,d)=>setCart(c=>c.map(i=>i.id===id?{...i,q:Math.max(1,i.q+d)}:i));
+ const toggle=id=>setWish(w=>w.includes(id)?w.filter(x=>x!==id):[...w,id]);
+ const total=cart.reduce((s,i)=>s+i.price*i.q,0),count=cart.reduce((s,i)=>s+i.q,0);
+ return <Store.Provider value={{cart,wish,drawer,setDrawer,search,setSearch,add,remove,qty,toggle,total,count}}>{children}</Store.Provider>
 }
 
-function Logo({ light=false }) {
-  return <Link to="/" className={`logo ${light ? "logo-light":""}`}>
-    <span className="logo-mark">✦</span><span>LUMIÈRE</span>
-  </Link>
+function useSmooth(){useEffect(()=>{const lenis=new Lenis({duration:1.15,smoothWheel:true}); let raf=t=>{lenis.raf(t);requestAnimationFrame(raf)};requestAnimationFrame(raf);return()=>lenis.destroy()},[])}
+function Logo({light=false}){return <Link to="/" className={'logo '+(light?'logo-light':'')}><span className="mark">◈</span><span>LUMIÈRE</span><small>FINE JEWELLERY</small></Link>}
+function Header({dark=false}){
+ const {count,wish,setDrawer,setSearch}=useStore(); const [menu,setMenu]=useState(false),[account,setAccount]=useState(false); const loc=useLocation();
+ useEffect(()=>{setMenu(false);setAccount(false)},[loc.pathname]);
+ return <>
+ <header className={'site-header '+(dark?'dark':'')}><button className="header-icon" onClick={()=>setMenu(true)}><Menu size={16}/></button><Logo light={dark}/><nav><Link to="/collections">Collections</Link><Link to="/shop">Jewellery</Link><Link to="/journal">Journal</Link><Link to="/about">About</Link><Link to="/contact">Contact</Link></nav><div className="header-actions"><button className="header-icon" onClick={()=>setSearch(true)}><Search size={15}/></button><button className="header-icon" onClick={()=>setAccount(v=>!v)}><UserRound size={15}/></button><button className="header-icon bag" onClick={()=>setDrawer(true)}><ShoppingBag size={15}/>{count>0&&<b>{count}</b>}</button></div></header>
+ <AnimatePresence>{account&&<motion.div className="account-pop" initial={{opacity:0,y:-12}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-12}}><span>YOUR LUMIÈRE</span><Link to="/account">My account</Link><Link to="/account?tab=orders">Orders</Link><Link to="/account?tab=wishlist">Wishlist <em>{wish.length}</em></Link><hr/><Link className="staff" to="/staff"><LockKeyhole size={12}/> Staff Access</Link></motion.div>}</AnimatePresence>
+ <AnimatePresence>{menu&&<motion.div className="menu-full" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><div className="menu-top"><Logo light/><button onClick={()=>setMenu(false)}><X/></button></div><div className="menu-links"><span>THE HOUSE OF LUMIÈRE</span>{[['Collections','/collections'],['Jewellery','/shop'],['The Journal','/journal'],['Our Story','/about'],['Contact','/contact']].map(([t,u],i)=><motion.div key={t} initial={{y:40,opacity:0}} animate={{y:0,opacity:1}} transition={{delay:i*.06}}><Link to={u}>{t}<ArrowUpRight/></Link></motion.div>)}</div><div className="menu-foot"><span>Jewellery for life's brightest moments.</span><span>© 2026 LUMIÈRE</span></div></motion.div>}</AnimatePresence></>
 }
+function SearchOverlay(){const {search,setSearch}=useStore();const [q,setQ]=useState('');const hits=products.filter(p=>(p.name+' '+p.cat+' '+p.tags.join(' ')).toLowerCase().includes(q.toLowerCase())).slice(0,8);return <AnimatePresence>{search&&<motion.div className="search-full" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><button onClick={()=>setSearch(false)}><X/></button><div><span>SEARCH LUMIÈRE</span><input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Search the collection..."/>{q&&<div className="search-results">{hits.map(p=><Link to={'/product/'+p.id} key={p.id}><img src={p.img}/><div><strong>{p.name}</strong><small>{p.cat}</small></div><b>₹{p.price.toLocaleString('en-IN')}</b></Link>)}</div>}</div></motion.div>}</AnimatePresence>}
+function CartDrawer(){const {drawer,setDrawer,cart,qty,remove,total}=useStore();return <AnimatePresence>{drawer&&<><motion.div className="veil" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setDrawer(false)}/><motion.aside className="cart-drawer" initial={{x:'100%'}} animate={{x:0}} exit={{x:'100%'}} transition={{type:'spring',stiffness:260,damping:28}}><header><div><span>YOUR SELECTION</span><h3>Bag <i>({cart.length})</i></h3></div><button onClick={()=>setDrawer(false)}><X/></button></header>{cart.length?<><div className="cart-items">{cart.map(i=><div className="cart-item" key={i.id}><img src={i.img}/><div><small>{i.cat}</small><h4>{i.name}</h4><div className="stepper"><button onClick={()=>qty(i.id,-1)}><Minus/></button><b>{i.q}</b><button onClick={()=>qty(i.id,1)}><Plus/></button></div></div><strong>₹{(i.price*i.q).toLocaleString('en-IN')}</strong><button className="remove" onClick={()=>remove(i.id)}><X/></button></div>)}</div><div className="cart-foot"><div><span>SUBTOTAL</span><b>₹{total.toLocaleString('en-IN')}</b></div><p>Complimentary shipping, signature packaging and insured delivery.</p><Link to="/checkout" onClick={()=>setDrawer(false)} className="lux-btn dark">Continue to checkout <ArrowRight/></Link><Link to="/cart" onClick={()=>setDrawer(false)} className="center-link">View bag</Link></div></>:<div className="empty"><Sparkles/><h3>Nothing yet.</h3><p>Take your time. Find something worth keeping.</p><Link to="/shop" onClick={()=>setDrawer(false)} className="lux-btn">Explore jewellery</Link></div>}</motion.aside></>}</AnimatePresence>}
+function Footer(){return <footer><div className="footer-brand"><Logo light/><p>Fine jewellery for life's<br/>brightest moments.</p></div><div><span>EXPLORE</span><Link to="/collections">Collections</Link><Link to="/shop">Jewellery</Link><Link to="/journal">The Journal</Link></div><div><span>CLIENT CARE</span><Link to="/contact">Contact</Link><Link to="/account">Orders</Link><Link to="/account">Your Bag</Link></div><div><span>NEWSLETTER</span><p>Private notes on new pieces, craft and the world of Lumière.</p><label><input placeholder="Your email"/><ArrowRight/></label></div><div className="footer-bottom"><span>© 2026 LUMIÈRE</span><span>JEWELLERY FOR LIFE'S BRIGHTEST MOMENTS</span><span>PRIVACY · TERMS</span></div></footer>}
+function Shell({children,dark=false}){useSmooth();return <><Header dark={dark}/>{children}<Footer/><SearchOverlay/><CartDrawer/></>}
+function Reveal({children,className='',delay=0}){return <motion.div className={className} initial={{opacity:0,y:55}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.15}} transition={{duration:1,ease:[.16,1,.3,1],delay}}>{children}</motion.div>}
+function Magnetic({children,className=''}){return <motion.div className={className} whileHover={{y:-2}}>{children}</motion.div>}
 
-function Header() {
-  const {count} = useStore();
-  const [menu,setMenu] = useState(false);
-  const [search,setSearch] = useState(false);
-  return <>
-    <header className="site-header">
-      <button className="icon-button mobile-only" onClick={()=>setMenu(true)} aria-label="Menu"><Menu size={20}/></button>
-      <Logo/>
-      <nav className="desktop-nav">
-        <Link to="/collections">Collections</Link>
-        <Link to="/shop">Jewellery</Link>
-        <Link to="/about">About</Link>
-        <Link to="/contact">Contact</Link>
-      </nav>
-      <div className="header-actions">
-        <button className="icon-button" onClick={()=>setSearch(true)}><Search size={18}/></button>
-        <Link className="icon-button desktop-only" to="/account"><UserRound size={18}/></Link>
-        <Link className="bag-button" to="/cart"><ShoppingBag size={18}/><span>{count}</span></Link>
-      </div>
-    </header>
-    <AnimatePresence>
-      {menu && <motion.div className="menu-overlay" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
-        <motion.div className="menu-panel" initial={{x:"-100%"}} animate={{x:0}} exit={{x:"-100%"}} transition={{duration:.5,ease:[.22,1,.36,1]}}>
-          <div className="menu-top"><Logo light/><button onClick={()=>setMenu(false)} className="icon-button light"><X/></button></div>
-          <div className="menu-links">
-            <Link onClick={()=>setMenu(false)} to="/">Home <ArrowUpRight/></Link>
-            <Link onClick={()=>setMenu(false)} to="/collections">Collections <ArrowUpRight/></Link>
-            <Link onClick={()=>setMenu(false)} to="/shop">Jewellery <ArrowUpRight/></Link>
-            <Link onClick={()=>setMenu(false)} to="/about">About <ArrowUpRight/></Link>
-            <Link onClick={()=>setMenu(false)} to="/contact">Contact <ArrowUpRight/></Link>
-          </div>
-          <div className="menu-image"><img src="/assets/collections.jpg"/><span>A story in every piece.</span></div>
-        </motion.div>
-      </motion.div>}
-      {search && <motion.div className="search-overlay" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}>
-        <div className="search-box"><Logo/><button className="icon-button" onClick={()=>setSearch(false)}><X/></button></div>
-        <div className="search-inner"><Search size={28}/><input autoFocus placeholder="Search rings, earrings, pendants..." onKeyDown={e=>e.key==="Escape"&&setSearch(false)}/></div>
-      </motion.div>}
-    </AnimatePresence>
-  </>
-}
+function Hero(){const ref=useRef(null);const {scrollYProgress}=useScroll({target:ref,offset:['start start','end start']});const y=useTransform(scrollYProgress,[0,1],[0,240]),scale=useTransform(scrollYProgress,[0,1],[1,1.13]),opacity=useTransform(scrollYProgress,[0,.8],[1,0]);const [slide,setSlide]=useState(0);const slides=[['Elegance','Lives in','Every Detail.'],['A quieter kind','of','brilliance.'],['Made for','the moments','you keep.']];useEffect(()=>{const t=setInterval(()=>setSlide(s=>(s+1)%3),6500);return()=>clearInterval(t)},[]);return <section ref={ref} className="hero"><motion.div className="hero-image" style={{y,scale}}><img src={heroLocal}/></motion.div><div className="hero-grain"/><motion.div className="hero-content" style={{opacity}}><span className="eyebrow">FINE JEWELLERY · 2026</span><AnimatePresence mode="wait"><motion.h1 key={slide} initial={{y:65,opacity:0}} animate={{y:0,opacity:1}} exit={{y:-45,opacity:0}} transition={{duration:.8,ease:[.16,1,.3,1]}}>{slides[slide][0]}<br/><em>{slides[slide][1]}</em><br/>{slides[slide][2]}</motion.h1></AnimatePresence><p>Timeless design. Thoughtfully crafted.<br/>Made to be part of your story.</p><Link to="/collections" className="lux-btn light">Explore collections <ArrowRight/></Link></motion.div><div className="hero-meta"><div className="hero-dots">{slides.map((_,i)=><button key={i} onClick={()=>setSlide(i)} className={i===slide?'active':''}>0{i+1}</button>)}</div><span>SCROLL <ArrowDown/></span></div></section>}
+function ArrowDown(){return <motion.span animate={{y:[0,4,0]}} transition={{repeat:Infinity,duration:1.5}}><ChevronDown size={12}/></motion.span>}
+function Intro(){return <section className="intro section"><span className="eyebrow">JEWELLERY FOR LIFE'S BRIGHTEST MOMENTS</span><Reveal><h2>Designed to be noticed.<br/><em>Made to be remembered.</em></h2></Reveal><Reveal delay={.1}><p>From quieter everyday pieces to the ones reserved for a lifetime, every Lumière design begins with proportion, light and the human story behind it.</p></Reveal></section>}
+function Feature(){return <section className="feature"><div className="feature-media"><motion.img src={media[48]} whileHover={{scale:1.04}} transition={{duration:1.2}}/><div className="feature-index">01 / 04</div></div><div className="feature-copy"><span className="eyebrow">THE CELESTE COLLECTION</span><h2>A little more <em>light.</em></h2><p>Warm metal, brilliant stone and hand-finished details come together in pieces designed around the way light moves.</p><Link className="text-arrow" to="/collections">Discover Celeste <ArrowRight/></Link></div></section>}
+function CollectionRail(){return <section className="section collection-section"><div className="section-head"><div><span className="eyebrow">CURATED FOR YOU</span><h2>Our collections</h2></div><Link to="/collections">View all <ArrowRight/></Link></div><div className="collection-rail">{collections.slice(0,4).map((c,i)=><Link to={'/shop?cat='+c.name} className="collection-card" key={c.name}><motion.img src={c.image} whileHover={{scale:1.07}} transition={{duration:.9}}/><div className="collection-overlay"/><div><span>0{i+1}</span><h3>{c.name}</h3><small>{c.count}</small></div><ArrowUpRight/></Link>)}</div></section>}
+function Manifesto(){return <><div className="ticker">{['CRAFTED WITH INTENTION','18K GOLD','LAB-GROWN DIAMONDS','HAND FINISHED','CRAFTED WITH INTENTION','18K GOLD','LAB-GROWN DIAMONDS','HAND FINISHED'].map((x,i)=><span key={i}>{x}<b>✦</b></span>)}</div><section className="manifesto section"><div><span className="eyebrow">THE LUMIÈRE JOURNAL</span><h2>The art of<br/><em>wearing a story.</em></h2><p>Notes on craft, styling and the small details that make a piece feel like yours.</p><Link className="text-arrow" to="/journal">Our story <ArrowRight/></Link></div><motion.div className="manifesto-stack" whileInView={{rotate:-2}} transition={{duration:1}}><img src={media[34]}/><div className="stack-card"><span>THE HOUSE</span><strong>Objects<br/><em>with memory.</em></strong></div></motion.div></section></>}
+function EditorialStrip(){return <section className="editorial-strip"><div className="editorial-copy"><span className="eyebrow">THE NEW CHAPTER</span><h2>Light, <em>held.</em></h2><p>Champagne gold. Soft ivory. Stones selected for the way they catch a room.</p><Link to="/shop" className="lux-btn dark">Enter the collection <ArrowRight/></Link></div><div className="editorial-images"><motion.img src={media[51]} whileHover={{scale:1.04}}/><motion.img src={media[53]} whileHover={{scale:1.04}}/></div></section>}
+function Home(){return <Shell dark><Hero/><Intro/><Feature/><CollectionRail/><Manifesto/><EditorialStrip/><Newsletter/></Shell>}
+function Newsletter(){return <section className="newsletter"><div><span className="eyebrow">PRIVATE NOTES</span><h2>Letters from<br/><em>Lumière.</em></h2></div><form onSubmit={e=>e.preventDefault()}><p>Occasional notes on new collections, craft and the world around them.</p><label><input type="email" placeholder="Your email address"/><button><ArrowRight/></button></label><small>By subscribing, you agree to receive Lumière correspondence.</small></form></section>}
+function Shop(){const [cat,setCat]=useState('All'),[sort,setSort]=useState('Featured'),[showFilter,setShowFilter]=useState(false);const list=useMemo(()=>{let x=cat==='All'?products:products.filter(p=>p.cat===cat);if(sort==='Price low')x=[...x].sort((a,b)=>a.price-b.price);if(sort==='Price high')x=[...x].sort((a,b)=>b.price-a.price);return x},[cat,sort]);return <Shell><section className="shop-head"><span className="eyebrow">THE COLLECTION</span><h1>Jewellery<br/><em>for keeping.</em></h1><p>Designed in light, finished by hand and made to live with you.</p></section><section className="shop-controls"><div className="chips">{['All',...['Rings','Necklaces','Earrings','Bracelets','Sets']].map(c=><button className={cat===c?'active':''} onClick={()=>setCat(c)} key={c}>{c}</button>)}</div><button className="filter-btn" onClick={()=>setShowFilter(v=>!v)}>Filter & sort <ChevronDown/></button></section>{showFilter&&<motion.div className="filter-panel" initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}}><span>Sort</span>{['Featured','Price low','Price high'].map(s=><button className={sort===s?'active':''} onClick={()=>setSort(s)} key={s}>{s}</button>)}</motion.div>}<section className="product-grid">{list.map((p,i)=><ProductCard key={p.id} p={p} i={i}/>)}</section></Shell>}
+function ProductCard({p,i}){const {wish,toggle,add}=useStore();const [hover,setHover]=useState(false);return <motion.article className="product-card" initial={{opacity:0,y:40}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.05}} transition={{duration:.7,delay:(i%4)*.04}} onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}><Link to={'/product/'+p.id} className="product-image"><motion.img src={hover?p.alt:p.img} animate={{scale:hover?1.035:1}} transition={{duration:.65}}/><span className="product-number">{String(i+1).padStart(2,'0')}</span></Link><button className={'wish '+(wish.includes(p.id)?'active':'')} onClick={()=>toggle(p.id)}><Heart fill={wish.includes(p.id)?'currentColor':'none'}/></button><div className="product-info"><div><span>{p.cat}</span><h3>{p.name}</h3></div><b>₹{p.price.toLocaleString('en-IN')}</b></div><button className="quick-add" onClick={()=>add(p)}>Add to bag <ArrowUpRight/></button></motion.article>}
+function Collections(){return <Shell><section className="collections-hero"><span className="eyebrow">THE HOUSE OF LUMIÈRE</span><h1>Collections<br/><em>with intention.</em></h1><p>Six chapters. One point of view: jewellery that becomes part of your life.</p></section><section className="collection-story">{collections.map((c,i)=><Link className={'collection-story-row '+(i%2?'reverse':'')} to={'/shop?cat='+c.name} key={c.name}><div className="story-img"><motion.img src={c.image} whileHover={{scale:1.05}}/></div><div className="story-copy"><span>0{i+1} · {c.count}</span><h2>{c.name}</h2><p>{c.intro}</p><span className="text-arrow">Enter collection <ArrowRight/></span></div></Link>)}</section></Shell>}
+function Product(){const {id}=useParams();const p=products.find(x=>x.id===id)||products[0];const {add,wish,toggle}=useStore();const [active,setActive]=useState(0),[size,setSize]=useState('7');return <Shell><section className="product-detail-page"><div className="gallery"><div className="gallery-main"><AnimatePresence mode="wait"><motion.img key={p.gallery[active]} src={p.gallery[active]} initial={{opacity:0,scale:1.04}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:.98}} transition={{duration:.55}}/></AnimatePresence><span>{String(active+1).padStart(2,'0')} / {p.gallery.length}</span></div><div className="thumbs">{p.gallery.map((x,i)=><button className={active===i?'active':''} onClick={()=>setActive(i)} key={x}><img src={x}/></button>)}</div></div><div className="product-copy"><span className="eyebrow">{p.cat} · LUMIÈRE ATELIER</span><h1>{p.name}</h1><div className="price">₹{p.price.toLocaleString('en-IN')} <del>₹{p.old.toLocaleString('en-IN')}</del></div><p>{p.desc}</p><div className="product-meta"><span>Material</span><div>{p.tags.map(t=><button key={t}>{t}</button>)}</div></div>{p.cat==='Rings'&&<div className="product-meta"><span>Size</span><div>{['5','6','7','8','9','10'].map(s=><button className={size===s?'selected':''} onClick={()=>setSize(s)} key={s}>{s}</button>)}</div></div>}<div className="buy-row"><button className="lux-btn dark" onClick={()=>add(p)}>Add to bag <ArrowRight/></button><button className={'heart-big '+(wish.includes(p.id)?'active':'')} onClick={()=>toggle(p.id)}><Heart fill={wish.includes(p.id)?'currentColor':'none'}/></button></div><div className="service-list"><div><Check/>Complimentary shipping</div><div><Check/>7-day returns</div><div><Check/>Lifetime care</div><div><Check/>Signature packaging</div></div></div></section><section className="product-story"><div><span className="eyebrow">THE DETAIL</span><h2>Quietly <em>considered.</em></h2><p>Every line, stone and surface is designed to sit naturally on the body. The result is a piece that feels considered today and familiar years from now.</p></div><img src={p.alt}/></section><section className="related section"><div className="section-head"><div><span className="eyebrow">YOU MAY ALSO LIKE</span><h2>More to discover</h2></div></div><div className="product-rail">{products.slice(8,14).map((x,i)=><ProductCard p={x} i={i} key={x.id}/>)}</div></section></Shell>}
+function Journal(){return <Shell><section className="journal-hero"><span className="eyebrow">THE LUMIÈRE JOURNAL</span><h1>Stories of<br/><em>light & making.</em></h1></section><section className="journal-list">{journal.map((j,i)=><article key={j.k}><span>{j.k}</span><img src={j.image}/><div><span className="eyebrow">ESSAY 0{i+1}</span><h2>{j.title}</h2><p>{j.dek}</p><Link className="text-arrow" to="/journal">Read the story <ArrowRight/></Link></div></article>)}</section></Shell>}
+function About(){return <Shell><section className="about-hero"><div><span className="eyebrow">THE HOUSE OF LUMIÈRE</span><h1>Objects with<br/><em>memory.</em></h1><p>Lumière is a fictional fine-jewellery house created for this experience: an exercise in restraint, craft, material and digital storytelling.</p></div><img src={media[52]}/></section><section className="about-manifesto"><span className="eyebrow">OUR POINT OF VIEW</span><h2>We design for the<br/><em>long memory.</em></h2><p>Not for noise. Not for a season. For the quiet moment when a piece becomes yours.</p></section></Shell>}
+function Contact(){return <Shell><section className="contact"><div><span className="eyebrow">CLIENT CARE</span><h1>Let's begin<br/><em>with a note.</em></h1><p>For appointments, bespoke enquiries, gifting or general questions, write to the house.</p><div className="contact-details"><span><Mail/> concierge@lumiere.example</span><span><MapPin/> By appointment · Mumbai</span><span><Camera/> @lumiere.jewellery</span></div></div><form onSubmit={e=>e.preventDefault()}><label>Name<input placeholder="Your name"/></label><label>Email<input type="email" placeholder="Your email"/></label><label>Message<textarea placeholder="Tell us how we can help."/></label><button className="lux-btn dark">Send enquiry <ArrowRight/></button></form></section></Shell>}
+function Cart(){const {cart,qty,remove,total}=useStore();return <Shell><section className="cart-page"><div className="page-head"><span className="eyebrow">YOUR SELECTION</span><h1>Your bag.</h1></div>{cart.length?<div className="cart-layout"><div>{cart.map(i=><div className="cart-row" key={i.id}><img src={i.img}/><div><span>{i.cat}</span><h3>{i.name}</h3><div className="stepper"><button onClick={()=>qty(i.id,-1)}><Minus/></button><b>{i.q}</b><button onClick={()=>qty(i.id,1)}><Plus/></button></div></div><strong>₹{(i.price*i.q).toLocaleString('en-IN')}</strong><button onClick={()=>remove(i.id)}><X/></button></div>)}</div><aside className="summary"><span>ORDER SUMMARY</span><div><b>Subtotal</b><strong>₹{total.toLocaleString('en-IN')}</strong></div><div><b>Shipping</b><strong>Complimentary</strong></div><hr/><div><b>Total</b><strong>₹{total.toLocaleString('en-IN')}</strong></div><Link className="lux-btn dark" to="/checkout">Checkout <ArrowRight/></Link></aside></div>:<div className="empty-page"><Sparkles/><h2>Your bag is quiet.</h2><p>Find a piece worth keeping.</p><Link className="lux-btn" to="/shop">Explore jewellery</Link></div>}</section></Shell>}
+function Checkout(){const {total}=useStore();const [step,setStep]=useState(1);return <Shell><section className="checkout"><div className="page-head"><span className="eyebrow">SECURE CHECKOUT</span><h1>Complete<br/><em>your story.</em></h1></div><div className="checkout-steps">{['Information','Delivery','Payment','Review'].map((x,i)=><span className={step===i+1?'active':''} key={x}><b>0{i+1}</b>{x}</span>)}</div><div className="checkout-layout"><form onSubmit={e=>{e.preventDefault();setStep(Math.min(4,step+1))}}><h2>{['Your details','Delivery address','Payment details','Review & place order'][step-1]}</h2>{step<4?<div className="form-grid"><label>First name<input placeholder="First name" required/></label><label>Last name<input placeholder="Last name" required/></label><label className="full">Email<input type="email" placeholder="you@example.com" required/></label><label className="full">Address<input placeholder="Address" required/></label><label>City<input placeholder="City" required/></label><label>Postcode<input placeholder="Postcode" required/></label></div>:<div className="review"><div><span>DELIVERY</span><p>Signature insured delivery · 2–5 business days</p></div><div><span>PAYMENT</span><p>Secure payment · demo environment</p></div><div><span>ORDER TOTAL</span><p>₹{total.toLocaleString('en-IN')}</p></div></div>}<button className="lux-btn dark" type="submit">{step===4?'Place order':'Continue'} <ArrowRight/></button></form><aside className="checkout-side"><span>YOUR ORDER</span><div className="mini-order"><img src={media[6]}/><div><b>Celeste Ring</b><small>Fine jewellery · 18K gold</small></div><strong>₹52,999</strong></div><hr/><div><span>Subtotal</span><b>₹{total.toLocaleString('en-IN')}</b></div><div><span>Shipping</span><b>Complimentary</b></div><div className="total"><span>Total</span><b>₹{total.toLocaleString('en-IN')}</b></div></aside></div></section></Shell>}
+function Account(){const [tab,setTab]=useState(new URLSearchParams(location.search).get('tab')||'overview');const {wish}=useStore();return <Shell><section className="account"><div className="account-hero"><span className="eyebrow">YOUR LUMIÈRE</span><h1>A private<br/><em>space.</em></h1></div><div className="account-tabs">{['overview','orders','wishlist'].map(t=><button className={tab===t?'active':''} onClick={()=>setTab(t)} key={t}>{t}</button>)}</div>{tab==='overview'&&<div className="account-panel"><h2>Welcome back.</h2><p>Your saved pieces, orders and preferences live here.</p><div className="account-stats"><div><span>ORDERS</span><b>02</b></div><div><span>WISHLIST</span><b>{String(wish.length).padStart(2,'0')}</b></div><div><span>MEMBER SINCE</span><b>26</b></div></div></div>}{tab==='orders'&&<div className="account-panel"><h2>Orders</h2><div className="order"><span>#LM-2408</span><b>Celeste Ring</b><span>Delivered</span><strong>₹52,999</strong></div><div className="order"><span>#LM-2184</span><b>Aurelia Necklace</b><span>Delivered</span><strong>₹74,900</strong></div></div>}{tab==='wishlist'&&<div className="account-panel"><h2>Saved pieces.</h2><div className="wishlist-mini">{products.filter(p=>wish.includes(p.id)).map(p=><Link to={'/product/'+p.id} key={p.id}><img src={p.img}/><span>{p.name}</span></Link>)}{!wish.length&&<p>Nothing saved yet.</p>}</div></div>}</section></Shell>}
+function Staff(){const [role,setRole]=useState('Admin'),[logged,setLogged]=useState(false);if(logged)return <StaffDashboard role={role}/>;return <div className="staff"><div className="staff-top"><Logo light/><Link to="/">Return to website</Link></div><div className="staff-login"><span className="eyebrow">LUMIÈRE OPERATIONS</span><h1>Private<br/><em>access.</em></h1><p>Authorized team workspace. This prototype demonstrates the role boundary; production access will be enforced server-side.</p><div className="role-switch">{['Admin','Manager','Employee'].map(r=><button className={role===r?'active':''} onClick={()=>setRole(r)} key={r}>{r}</button>)}</div><label>Email<input placeholder="name@lumiere.example"/></label><label>Password<input type="password" placeholder="••••••••"/></label><button className="lux-btn light full" onClick={()=>setLogged(true)}>Enter {role} workspace <ArrowRight/></button></div></div>}
+function StaffDashboard({role}){const nav=role==='Admin'?['Overview','Orders','Products','Customers','Employees','Analytics','Settings']:role==='Manager'?['Overview','Orders','Products','Customers','Analytics']:['Overview','Assigned orders','Inventory'];return <div className="ops"><aside><Logo light/><span>WORKSPACE · {role.toUpperCase()}</span>{nav.map((x,i)=><button className={i===0?'active':''} key={x}>{x}</button>)}<Link to="/">Exit workspace</Link></aside><main><div className="ops-head"><div><span>GOOD MORNING · {role.toUpperCase()}</span><h1>Operations.</h1></div><b>● SYSTEMS NOMINAL</b></div><div className="ops-stats"><div><span>REVENUE</span><b>₹18.4L</b><small>+12.8% this month</small></div><div><span>ORDERS</span><b>284</b><small>18 need attention</small></div><div><span>CLIENTS</span><b>1,902</b><small>+86 this month</small></div><div><span>INVENTORY</span><b>94%</b><small>healthy availability</small></div></div><div className="ops-grid"><section><header><span>RECENT ORDERS</span><button>View all <ArrowRight/></button></header>{products.slice(0,7).map((p,i)=><div className="ops-order" key={p.id}><img src={p.img}/><span>LM-{2480-i}</span><b>{p.name}</b><span>₹{p.price.toLocaleString('en-IN')}</span><em className={i===2?'warn':''}>{i===2?'Attention':'Processing'}</em></div>)}</section><section className="ops-chart"><header><span>SALES · 30 DAYS</span></header><div className="bars">{Array.from({length:18},(_,i)=><i style={{height:`${30+(i*17)%64}%`}} key={i}/>)}</div><p>Revenue is tracking above the previous 30-day period.</p></section></div></main></div>}
+function Success(){return <Shell><section className="success"><span className="eyebrow">ORDER CONFIRMED</span><div className="success-ring"><Check/></div><h1>Made to be<br/><em>remembered.</em></h1><p>Your order <b>#LM-20261007</b> has been placed. A private confirmation has been sent to your email.</p><Link className="lux-btn dark" to="/">Return to Lumière <ArrowRight/></Link></section></Shell>}
+function NotFound(){return <Shell><section className="notfound"><span>404</span><h1>Not this<br/><em>chapter.</em></h1><Link className="lux-btn dark" to="/">Return home <ArrowRight/></Link></section></Shell>}
+function App(){const {pathname:path}=useLocation();let C=NotFound;if(path==='/')C=Home;else if(path==='/shop')C=Shop;else if(path==='/collections')C=Collections;else if(path.startsWith('/product/'))C=Product;else if(path==='/journal')C=Journal;else if(path==='/about')C=About;else if(path==='/contact')C=Contact;else if(path==='/cart')C=Cart;else if(path==='/checkout')C=Checkout;else if(path==='/account')C=Account;else if(path==='/staff')C=Staff;else if(path==='/success')C=Success;return <StoreProvider><C/></StoreProvider>}
+createRoot(document.getElementById('root')).render(<BrowserRouter><App/></BrowserRouter>);
 
-function PageIntro({eyebrow,title,copy}) {
-  return <section className="page-intro"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1></div>{copy&&<p>{copy}</p>}</section>
-}
 
-function Home() {
-  const {scrollYProgress} = useScroll();
-  const heroY = useTransform(scrollYProgress,[0,.28],[0,-80]);
-  const heroScale = useTransform(scrollYProgress,[0,.25],[1,1.06]);
-  return <div>
-    <section className="hero">
-      <motion.img style={{y:heroY,scale:heroScale}} src="/assets/hero.jpg" className="hero-img"/>
-      <div className="hero-shade"/>
-      <div className="hero-copy">
-        <span className="eyebrow">Fine Jewellery</span>
-        <h1>Elegance<br/>Lives in<br/><i>Every Detail.</i></h1>
-        <p>Timeless designs. Thoughtfully crafted.<br/>Made to be part of your story.</p>
-        <Link className="button button-gold" to="/collections">Explore Collections <ArrowRight size={16}/></Link>
-      </div>
-      <div className="hero-meta"><span>01</span><span>02</span><span>03</span><span className="line"/><span className="scroll-label"><ArrowDown size={14}/> Scroll</span></div>
-    </section>
-
-    <section className="statement section-pad">
-      <span className="eyebrow">Jewellery for life's brightest moments</span>
-      <h2>Designed to be noticed.<br/><i>Made to be remembered.</i></h2>
-      <p>From quiet everyday pieces to the ones reserved for a lifetime, every Lumière design begins with proportion, light and the human story behind it.</p>
-    </section>
-
-    <section className="feature-split">
-      <div className="feature-image"><img src="/assets/ring.jpg"/></div>
-      <div className="feature-copy">
-        <span className="eyebrow">The Celeste Collection</span>
-        <h2>A little more<br/><i>light.</i></h2>
-        <p>Warm metal, brilliant stones and hand-finished details come together in pieces designed around the way light moves.</p>
-        <Link className="text-link" to="/product/celeste">Discover Celeste <ArrowRight size={16}/></Link>
-      </div>
-    </section>
-
-    <section className="collection-strip section-pad">
-      <div className="section-head"><div><span className="eyebrow">Curated for you</span><h2>Our collections</h2></div><Link className="text-link" to="/collections">View all <ArrowRight size={16}/></Link></div>
-      <div className="collection-grid">
-        {[
-          ["Rings","/assets/product-ring.jpg","120+ designs"],
-          ["Necklaces","/assets/product-necklace.jpg","90+ designs"],
-          ["Earrings","/assets/product-earrings.jpg","80+ designs"],
-          ["Bracelets","/assets/product-bracelet.jpg","60+ designs"]
-        ].map(([name,image,count])=><Link to={`/shop?category=${name}`} className="collection-card" key={name}>
-          <img src={image}/><div><span>{name}</span><small>{count}</small><ArrowUpRight/></div>
-        </Link>)}
-      </div>
-    </section>
-
-    <section className="marquee"><div>{["CRAFTED WITH INTENTION","18K GOLD","LAB-GROWN DIAMONDS","HAND FINISHED","CRAFTED WITH INTENTION"].map((x,i)=><span key={i}>{x} <b>✦</b></span>)}</div></section>
-
-    <section className="editorial section-pad">
-      <div><span className="eyebrow">The Lumière Journal</span><h2>The art of<br/><i>wearing a story.</i></h2><p>Notes on craft, styling and the small details that make a piece feel like yours.</p><Link className="text-link" to="/about">Our story <ArrowRight size={16}/></Link></div>
-      <div className="editorial-image"><img src="/assets/collections.jpg"/></div>
-    </section>
-  </div>
-}
-
-function Collections() {
-  const groups = [
-    ["Rings","/assets/product-ring.jpg","Designed around the hand."],
-    ["Necklaces","/assets/product-necklace.jpg","Lines that frame the story."],
-    ["Earrings","/assets/product-earrings.jpg","A little light, close to you."],
-    ["Bracelets","/assets/product-bracelet.jpg","Movement, captured in gold."],
-    ["Pendants","/assets/product-necklace.jpg","Quiet pieces with presence."],
-    ["Mangalsutra","/assets/collections.jpg","Heritage, interpreted anew."]
-  ];
-  return <><PageIntro eyebrow="The collection" title="Our Collections" copy="Distinct designs for every chapter of your story."/><section className="collection-page-grid">
-    {groups.map(([name,img,copy],i)=><Link className={`big-collection c-${i}`} to={`/shop?category=${name}`} key={name}><img src={img}/><div><span>{name}</span><p>{copy}</p><ArrowUpRight/></div></Link>)}
-  </section></>
-}
-
-function Shop() {
-  const query = new URLSearchParams(useLocation().search);
-  const initial = query.get("category") || "All";
-  const [cat,setCat] = useState(initial);
-  const [sort,setSort] = useState("featured");
-  const [filterOpen,setFilterOpen] = useState(false);
-  const categories=["All","Rings","Necklaces","Earrings","Bracelets","Pendants","Mangalsutra"];
-  const filtered = products.filter(p=>cat==="All"||p.category===cat).sort((a,b)=>sort==="price-low"?a.price-b.price:sort==="price-high"?b.price-a.price:0);
-  return <><PageIntro eyebrow="The jewellery edit" title="Pieces with presence." copy="Explore the full Lumière collection, from everyday signatures to statement pieces."/>
-    <section className="shop-toolbar"><div className="chips">{categories.map(c=><button className={cat===c?"active":""} onClick={()=>setCat(c)} key={c}>{c}</button>)}</div><div className="toolbar-right"><button onClick={()=>setFilterOpen(true)} className="filter-button">Filter & Sort <ChevronDown size={16}/></button></div></section>
-    <section className="product-grid">{filtered.map(p=><ProductCard product={p} key={p.id}/>)}</section>
-    <AnimatePresence>{filterOpen&&<FilterDrawer sort={sort} setSort={setSort} close={()=>setFilterOpen(false)}/>}</AnimatePresence>
-  </>
-}
-
-function ProductCard({product}) {
-  const {wishlist,toggleWishlist,addToCart}=useStore();
-  const liked=wishlist.includes(product.id);
-  return <motion.article className="product-card" layout whileHover={{y:-5}}>
-    <Link to={`/product/${product.id}`} className="product-photo">
-      <img src={product.image}/>
-      <span className="badge">{product.badge}</span>
-      <motion.div className="hover-view" initial={{opacity:0}} whileHover={{opacity:1}}>View piece <ArrowUpRight size={15}/></motion.div>
-    </Link>
-    <div className="product-info"><div><span className="product-category">{product.category}</span><Link to={`/product/${product.id}`} className="product-name">{product.name}</Link></div>
-      <button className={`heart ${liked?"liked":""}`} onClick={()=>toggleWishlist(product.id)} aria-label="Wishlist"><Heart size={18} fill={liked?"currentColor":"none"}/></button></div>
-    <div className="product-bottom"><strong>{formatINR(product.price)}</strong><button onClick={()=>addToCart(product)} className="quick-add">Add <Plus size={14}/></button></div>
-  </motion.article>
-}
-
-function FilterDrawer({sort,setSort,close}) {
-  return <motion.div className="drawer-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={close}><motion.aside className="filter-drawer" initial={{x:"100%"}} animate={{x:0}} exit={{x:"100%"}} onClick={e=>e.stopPropagation()}><div className="drawer-head"><h3>Filter & Sort</h3><button onClick={close} className="icon-button"><X/></button></div><div className="drawer-section"><span className="eyebrow">Sort by</span>{[["featured","Featured"],["price-low","Price — Low to high"],["price-high","Price — High to low"]].map(([v,l])=><button className={`drawer-option ${sort===v?"selected":""}`} onClick={()=>setSort(v)} key={v}>{l}{sort===v&&<Check size={16}/>}</button>)}</div><button className="button button-dark full" onClick={close}>Apply</button></motion.aside></motion.div>
-}
-
-function ProductPage() {
-  const {id}=useParams();
-  const product=products.find(p=>p.id===id) || products[0];
-  const {wishlist,toggleWishlist,addToCart}=useStore();
-  const [size,setSize]=useState(product.sizes?.[0]||null);
-  const [active,setActive]=useState(product.image);
-  const images=[product.image,"/assets/ring.jpg","/assets/product-ring.jpg","/assets/product-earrings.jpg"];
-  useEffect(()=>{setSize(product.sizes?.[0]||null);setActive(product.image)},[id]);
-  return <section className="product-page">
-    <div className="product-gallery"><div className="thumbs">{images.map((x,i)=><button className={active===x?"active":""} onClick={()=>setActive(x)} key={i}><img src={x}/></button>)}</div><motion.div className="main-product-image" layoutId={`product-${product.id}`}><AnimatePresence mode="wait"><motion.img key={active} initial={{opacity:0,scale:.97}} animate={{opacity:1,scale:1}} exit={{opacity:0}} transition={{duration:.35}} src={active}/></AnimatePresence></motion.div></div>
-    <div className="product-detail"><span className="eyebrow">{product.category} · {product.badge}</span><h1>{product.name}</h1><div className="rating">★★★★★ <span>4.9 · 128 reviews</span></div><div className="detail-price">{formatINR(product.price)} {product.oldPrice&&<del>{formatINR(product.oldPrice)}</del>}</div><p>{product.desc}</p><div className="spec-line">{product.notes}</div>
-      <div className="selector"><span>Material</span><div className="selector-options"><button className="selected">Rose Gold</button><button>Yellow Gold</button><button>White Gold</button></div></div>
-      {product.sizes?.length>0&&<div className="selector"><span>Size <a href="#size">Size Guide</a></span><div className="selector-options">{product.sizes.map(s=><button className={size===s?"selected":""} onClick={()=>setSize(s)} key={s}>{s}</button>)}</div></div>}
-      <div className="detail-actions"><button className="button button-dark" onClick={()=>addToCart(product,size)}>Add to Bag <ArrowRight size={16}/></button><button className={`wishlist-large ${wishlist.includes(product.id)?"liked":""}`} onClick={()=>toggleWishlist(product.id)}><Heart fill={wishlist.includes(product.id)?"currentColor":"none"}/></button></div>
-      <div className="trust-row"><span>◎ Certified Jewellery</span><span>↻ 7-Day Returns</span><span>□ Free Shipping</span><span>♡ Lifetime Support</span></div>
-    </div>
-  </section>
-}
-
-function Cart() {
-  const {cartLines,subtotal,updateQty,removeItem}=useStore();
-  return <section className="cart-page"><PageIntro eyebrow="Your selection" title="Your Cart" copy={`${cartLines.length} pieces selected.`}/><div className="cart-layout"><div className="cart-lines">{cartLines.length===0?<Empty text="Your bag is waiting." action="/shop" label="Explore Jewellery"/>:cartLines.map(x=><div className="cart-line" key={x.key}><img src={x.product.image}/><div className="cart-line-info"><span className="product-category">{x.product.category}</span><h3>{x.product.name}</h3><p>{x.size?`Size ${x.size} · `:""}{x.product.material}</p><strong>{formatINR(x.product.price)}</strong></div><div className="qty"><button onClick={()=>updateQty(x.key,-1)}><Minus/></button><span>{x.qty}</span><button onClick={()=>updateQty(x.key,1)}><Plus/></button></div><button className="remove" onClick={()=>removeItem(x.key)}><X/></button></div>)}</div>{cartLines.length>0&&<div className="summary"><span className="eyebrow">Order summary</span><div><span>Subtotal</span><strong>{formatINR(subtotal)}</strong></div><div><span>Shipping</span><strong>Free</strong></div><div><span>GST (2%)</span><strong>{formatINR(Math.round(subtotal*.02))}</strong></div><hr/><div className="total"><span>Total</span><strong>{formatINR(Math.round(subtotal*1.02))}</strong></div><Link className="button button-dark full" to="/checkout">Proceed to Checkout <ArrowRight/></Link></div>}</div></section>
-}
-
-function CartDrawer() {
-  const {cartOpen,setCartOpen,cartLines,subtotal,updateQty,removeItem}=useStore();
-  return <AnimatePresence>{cartOpen&&<motion.div className="drawer-backdrop" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} onClick={()=>setCartOpen(false)}><motion.aside className="cart-drawer" initial={{x:"100%"}} animate={{x:0}} exit={{x:"100%"}} onClick={e=>e.stopPropagation()}><div className="drawer-head"><h3>Your Cart <small>({cartLines.length})</small></h3><button onClick={()=>setCartOpen(false)} className="icon-button"><X/></button></div>{cartLines.length===0?<Empty text="Your bag is waiting." action="/shop" label="Explore Jewellery"/>:<><div className="drawer-items">{cartLines.map(x=><div className="mini-line" key={x.key}><img src={x.product.image}/><div><strong>{x.product.name}</strong><span>{formatINR(x.product.price)}</span><div className="mini-qty"><button onClick={()=>updateQty(x.key,-1)}><Minus/></button><span>{x.qty}</span><button onClick={()=>updateQty(x.key,1)}><Plus/></button><button onClick={()=>removeItem(x.key)}><X/></button></div></div></div>)}</div><div className="drawer-total"><div><span>Subtotal</span><strong>{formatINR(subtotal)}</strong></div><Link onClick={()=>setCartOpen(false)} className="button button-dark full" to="/checkout">Checkout <ArrowRight/></Link></div></>}</motion.aside></motion.div>}</AnimatePresence>
-}
-
-function Checkout() {
-  const {subtotal,cartLines}=useStore();
-  const [step,setStep]=useState(1);
-  const [placed,setPlaced]=useState(false);
-  if (placed) return <OrderSuccess/>;
-  if (!cartLines.length) return <Empty text="Your cart is empty." action="/shop" label="Explore Jewellery"/>;
-  return <section className="checkout"><div className="checkout-head"><Logo/><div className="steps">{["Shipping","Payment","Review"].map((x,i)=><span className={step===i+1?"active":step>i+1?"done":""} key={x}><b>{i+1}</b>{x}</span>)}</div></div><div className="checkout-layout"><div className="checkout-form">{step===1&&<Form title="Shipping Details" fields={["Full Name","Phone Number","Address","City","State","Pincode"]}/>} {step===2&&<Form title="Payment" fields={["Card Number","Name on Card","Expiry","CVV"]}/>} {step===3&&<div className="review"><h2>Review your order</h2>{cartLines.map(x=><div className="review-line" key={x.key}><img src={x.product.image}/><span>{x.product.name} × {x.qty}</span><strong>{formatINR(x.product.price*x.qty)}</strong></div>)}</div>}<button className="button button-dark full" onClick={()=>step<3?setStep(step+1):setPlaced(true)}>{step<3?"Continue":"Place Order"} <ArrowRight/></button></div><div className="checkout-summary"><span className="eyebrow">Order Summary</span>{cartLines.map(x=><div className="review-line small" key={x.key}><span>{x.product.name} × {x.qty}</span><strong>{formatINR(x.product.price*x.qty)}</strong></div>)}<hr/><div className="total"><span>Total</span><strong>{formatINR(Math.round(subtotal*1.02))}</strong></div></div></div></section>
-}
-
-function Form({title,fields}) {
-  return <div className="form"><h2>{title}</h2>{fields.map(f=><label key={f}>{f}<input placeholder={f}/></label>)}<label className="check"><input type="checkbox"/> Save this information for next time</label></div>
-}
-
-function OrderSuccess() {
-  return <section className="success"><div className="success-icon"><Check/></div><span className="eyebrow">Order confirmed</span><h1>Placed<br/><i>Successfully.</i></h1><p>Thank you for choosing Lumière.<br/>Your order #LMR2315 has been confirmed.</p><Link className="button button-gold" to="/account">View Order <ArrowRight/></Link><div className="order-track"><span>Order Confirmed</span><span>Processing</span><span>Shipped</span><span>Out for Delivery</span><span>Delivered</span></div></section>
-}
-
-function Account() {
-  const {wishlist}=useStore();
-  return <section className="account"><PageIntro eyebrow="Your Lumière" title="Welcome back." copy="Your pieces, orders and saved details in one place."/><div className="account-stats"><div><strong>5</strong><span>Total Orders</span></div><div><strong>{wishlist.length}</strong><span>Wishlist Items</span></div><div><strong>2</strong><span>Saved Addresses</span></div></div><div className="account-panel"><div className="account-nav"><button className="active">Overview</button><button>Orders</button><button>Wishlist</button><button>Addresses</button><button>Profile</button></div><div className="account-content"><div className="section-head"><h2>Recent Orders</h2><span>View all →</span></div>{[["#LMR2316","Celeste Diamond Ring","₹52,999","Delivered"],["#LMR3089","Pearl Drop Earrings","₹12,499","Shipped"],["#LMR2840","Emerald Pendant","₹65,498","Processing"]].map(x=><div className="order-row" key={x[0]}><span>{x[0]}</span><strong>{x[1]}</strong><span>{x[2]}</span><em>{x[3]}</em><button>View Details</button></div>)}</div></div></section>
-}
-
-function About() { return <><PageIntro eyebrow="The house of Lumière" title="A story in every piece." copy="Jewellery made with proportion, patience and a respect for the moments it becomes part of."/><section className="about-hero"><img src="/assets/collections.jpg"/><div><span className="eyebrow">Our philosophy</span><h2>Quietly distinctive.<br/><i>Never ordinary.</i></h2><p>We believe fine jewellery does not need to shout. It needs to catch the light at the right moment, sit beautifully against the skin and remain meaningful long after the occasion has passed.</p></div></section><section className="about-values section-pad"><div><Sparkles/><h3>Considered design</h3><p>Every silhouette begins with proportion, balance and how it moves when worn.</p></div><div><Sparkles/><h3>Responsible craft</h3><p>We favour traceable materials and lab-grown stones where they suit the design.</p></div><div><Sparkles/><h3>Made for a lifetime</h3><p>Our pieces are finished to be worn, loved, repaired and passed forward.</p></div></section></> }
-
-function Contact() { return <section className="contact"><PageIntro eyebrow="Come closer" title="Let's talk jewellery." copy="For appointments, custom pieces, gifting or simply finding the right piece, our team is here."/><div className="contact-grid"><div><span className="eyebrow">Visit</span><h3>Mumbai Atelier</h3><p>By appointment only.<br/>Monday — Saturday<br/>10:00 — 19:00</p><a href="mailto:hello@lumiere.example" className="text-link">hello@lumiere.example <ArrowUpRight/></a></div><form className="contact-form"><input placeholder="Your name"/><input placeholder="Email address"/><select defaultValue=""><option value="" disabled>What can we help with?</option><option>Jewellery consultation</option><option>Custom piece</option><option>Order support</option></select><textarea placeholder="Tell us a little more"></textarea><button className="button button-dark">Send Enquiry <ArrowRight/></button></form></div></section> }
-
-function Empty({text,action,label}) { return <div className="empty"><span>✦</span><h2>{text}</h2><Link className="button button-dark" to={action}>{label} <ArrowRight/></Link></div> }
-
-function Footer() {
-  return <footer><div className="footer-main"><div><Logo light/><p>Jewellery for life's<br/>brightest moments.</p></div><div><span className="footer-title">Explore</span><Link to="/collections">Collections</Link><Link to="/shop">Jewellery</Link><Link to="/about">Our Story</Link></div><div><span className="footer-title">Client care</span><Link to="/contact">Contact</Link><Link to="/account">Orders</Link><Link to="/cart">Your Bag</Link></div><div><span className="footer-title">Newsletter</span><p>Private notes on new pieces, craft and the world of Lumière.</p><div className="newsletter"><input placeholder="Your email"/><button><ArrowRight/></button></div></div></div><div className="footer-bottom"><span>© 2026 LUMIÈRE</span><span>Jewellery for life's brightest moments.</span><span>Privacy · Terms</span></div></footer>
-}
-
-function App() {
-  return <StoreProvider><Header/><Transition/><Routes/><CartDrawer/><Footer/></StoreProvider>
-}
-
-function Routes() {
-  const path=useLocation().pathname;
-  const page = path==="/" ? <Home/> :
-    path==="/collections" ? <Collections/> :
-    path==="/shop" ? <Shop/> :
-    path.startsWith("/product/") ? <ProductPage/> :
-    path==="/cart" ? <Cart/> :
-    path==="/checkout" ? <Checkout/> :
-    path==="/account" ? <Account/> :
-    path==="/about" ? <About/> :
-    path==="/contact" ? <Contact/> : <Home/>;
-  return <main>{page}</main>
-}
-
-createRoot(document.getElementById("root")).render(<BrowserRouter><App/></BrowserRouter>);
