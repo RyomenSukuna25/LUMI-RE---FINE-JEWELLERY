@@ -1,0 +1,1 @@
+The storefront uses the approved LUMIERE visual-board imagery. Product images are demo assets for prototype use.
